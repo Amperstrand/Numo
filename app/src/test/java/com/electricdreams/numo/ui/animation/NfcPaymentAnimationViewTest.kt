@@ -141,13 +141,13 @@ class NfcPaymentAnimationViewTest {
 
     @Test
     @GraphicsMode(GraphicsMode.Mode.NATIVE)
-    fun `success badge is ink with the green reveal around it`() {
+    fun `success badge is white with the green reveal around it`() {
         layOut()
         view.showSuccess()
         runAnimations()
 
         // Inside the badge, clear of the check stroke
-        assertEquals(color(R.color.color_on_settled), colorAboveCentre(0.6f))
+        assertEquals(Color.WHITE, colorAboveCentre(0.6f))
         assertEquals(color(R.color.color_nfc_success), colorAboveCentre(1.5f))
     }
 

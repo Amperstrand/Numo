@@ -71,13 +71,11 @@
     <!-- Converted Amount Display -->
     <TextView
         android:id="@+id/converted_amount_display"
+        style="@style/Text.SecondaryAmount"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="@dimen/space_xl"
         android:text=""
-        android:textColor="@color/color_text_secondary"
-        android:textSize="16sp"
-        android:textStyle="normal"
         android:visibility="gone"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -453,7 +451,7 @@
                     <!-- Converted amount and tip, as on the payment screen -->
                     <TextView
                         android:id="@+id/animation_result_secondary"
-                        style="@style/Text.Body"
+                        style="@style/Text.SecondaryAmount"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/space_xs"
@@ -524,7 +522,7 @@
                 android:layout_marginBottom="@dimen/space_3xl"
                 android:visibility="invisible">
 
-                <!-- Success: ink actions on the settled green, the same in both themes -->
+                <!-- Success: actions on the settled green, the same in both themes -->
                 <LinearLayout
                     android:id="@+id/animation_success_actions"
                     android:layout_width="match_parent"

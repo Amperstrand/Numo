@@ -215,12 +215,15 @@
     <color name="color_lightning_bolt_outer_glow">#FFCC80</color>
 
     <!-- NFC Payment Animation Colors -->
-    <color name="color_nfc_success">@color/numo_green</color>
-    <!-- Ink on the settled green, in both themes: 7.98:1 (white would be 2.39:1) -->
-    <color name="color_on_settled">@color/numo_dark</color>
-    <!-- Supporting text on the settled green: ink at 75%, about 5.1:1 -->
-    <color name="color_on_settled_secondary">#BF0B1215</color>
-    <color name="color_on_settled_ripple">#1F0B1215</color>
+    <!-- The settled moment: a notch deeper than numo_green so white on it reads (3.45:1;
+         white on numo_green is 2.39:1) -->
+    <color name="color_nfc_success">@color/numo_green_pressed</color>
+    <!-- Text and icons on the settled green, in both themes -->
+    <color name="color_on_settled">@color/white</color>
+    <color name="color_on_settled_secondary">@color/white</color>
+    <color name="color_on_settled_ripple">#33FFFFFF</color>
+    <!-- Done pill on the settled green -->
+    <color name="color_settled_action">@color/numo_dark</color>
 
     <!-- Theme Background Colors (for ThemeManager) -->
     <color name="color_theme_obsidian">@color/numo_dark</color>

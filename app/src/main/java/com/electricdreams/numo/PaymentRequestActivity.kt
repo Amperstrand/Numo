@@ -16,6 +16,8 @@ import com.electricdreams.numo.util.vibrateCompat
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
+import android.text.SpannableStringBuilder
+import android.text.style.RelativeSizeSpan
 import android.util.Log
 import android.view.MenuItem
 import android.view.View
@@ -2082,7 +2084,7 @@ class PaymentRequestActivity : AppCompatActivity() {
 
         revealResultAfterMinimumLoading {
             fadeOutLoading()
-            // Ink goes on as the green reaches each part, so nothing is ever ink on the
+            // Text turns white as the green reaches it, so nothing is ever white on the
             // app background or a blend of the two.
             nfcAnimationView.doOnRevealCovering(animationResultSecondaryText) {
                 animationResultSecondaryText.setTextColor(
@@ -2114,9 +2116,15 @@ class PaymentRequestActivity : AppCompatActivity() {
         } else {
             null
         }
-        val lines = listOfNotNull(converted, tip).filter { it.isNotBlank() }
-        animationResultSecondaryText.text = lines.joinToString("\n")
-        animationResultSecondaryText.visibility = if (lines.isEmpty()) View.GONE else View.VISIBLE
+        val text = SpannableStringBuilder()
+        converted?.takeIf { it.isNotBlank() }?.let { text.append(it) }
+        tip?.takeIf { it.isNotBlank() }?.let {
+            if (text.isNotEmpty()) text.append("\n")
+            // The tip is a footnote to the amount, so it stays at body size
+            text.append(it, RelativeSizeSpan(TIP_LINE_RELATIVE_SIZE), 0)
+        }
+        animationResultSecondaryText.text = text
+        animationResultSecondaryText.visibility = if (text.isEmpty()) View.GONE else View.VISIBLE
     }
 
     private fun playNfcSuccessFeedback() {
@@ -2369,8 +2377,8 @@ class PaymentRequestActivity : AppCompatActivity() {
      * turn light once the success green has been revealed.
      */
     private fun applyFullscreenForAnimationOverlay() {
-        // Ink icons on the settled green in both themes, like the rest of its foreground
-        val darkIcons = overlayOnSuccessColor || !isNightMode()
+        // Light icons on the settled green in both themes, like the rest of its foreground
+        val darkIcons = !overlayOnSuccessColor && !isNightMode()
         WindowCompat.setDecorFitsSystemWindows(window, false)
         WindowInsetsControllerCompat(window, window.decorView).apply {
             show(WindowInsetsCompat.Type.statusBars() or WindowInsetsCompat.Type.navigationBars())
@@ -2455,6 +2463,8 @@ class PaymentRequestActivity : AppCompatActivity() {
         private const val LOADER_EXIT_SCALE = 0.9f
         private const val AMOUNT_RECOLOR_MS = 260L
         private const val AMOUNT_RECOLOR_DELAY_MS = 80L
+        // Tip line under the 22sp converted amount, at body size (15sp)
+        private const val TIP_LINE_RELATIVE_SIZE = 15f / 22f
         private const val RESULT_TEXT_IN_MS = 300L
         private const val RESULT_TEXT_STAGGER_MS = 60L
         private const val RESULT_ACTIONS_DELAY_MS = 120L

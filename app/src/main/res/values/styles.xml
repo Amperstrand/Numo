@@ -84,6 +84,15 @@
         <item name="android:letterSpacing">-0.012</item>
     </style>
 
+    <!-- SecondaryAmount: the converted amount under a display amount (fiat under sats) -->
+    <style name="Text.SecondaryAmount">
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:textSize">22sp</item>
+        <item name="android:lineHeight">28sp</item>
+        <item name="android:textColor">@color/color_text_secondary</item>
+        <item name="android:gravity">center</item>
+    </style>
+
     <!-- Button: Primary/secondary action labels -->
     <style name="Text.Button">
         <item name="android:fontFamily">sans-serif-medium</item>
@@ -462,7 +471,7 @@
         <item name="elevation">0dp</item>
     </style>
 
-    <!-- On the settled green: borderless ink text action -->
+    <!-- On the settled green: borderless white text action -->
     <style name="Widget.Numo.Button.OnSettled.Text" parent="Widget.Numo.Button.Tertiary">
         <item name="android:textColor">@color/color_on_settled</item>
         <item name="android:textSize">@dimen/text_button</item>

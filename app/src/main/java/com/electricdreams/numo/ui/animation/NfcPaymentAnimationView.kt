@@ -28,8 +28,8 @@ import kotlin.math.min
  * Draws the result moment of the NFC payment overlay, centred on an anchor view
  * (the slot that holds the loading spinner) so the result grows out of the loader:
  *
- * - Success: a full-screen green reveal growing from the anchor, then an ink badge
- *   with a green checkmark drawn in. Views on top switch to ink as the reveal reaches
+ * - Success: a full-screen green reveal growing from the anchor, then a white badge
+ *   with a green checkmark drawn in. Views on top switch to white as the reveal reaches
  *   them (see [doOnRevealCovering]).
  * - Error: a red badge with a white ✕ drawn in, over the app background.
  *
@@ -47,7 +47,6 @@ class NfcPaymentAnimationView @JvmOverloads constructor(
     private enum class ResultType { SUCCESS, ERROR }
 
     private val colorSuccess = ContextCompat.getColor(context, R.color.color_nfc_success)
-    private val colorOnSettled = ContextCompat.getColor(context, R.color.color_on_settled)
     private val colorError = ContextCompat.getColor(context, R.color.color_error)
 
     private val revealPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -323,7 +322,7 @@ class NfcPaymentAnimationView @JvmOverloads constructor(
         }
 
         if (badgeScale <= 0f) return
-        badgePaint.color = if (result == ResultType.SUCCESS) colorOnSettled else colorError
+        badgePaint.color = if (result == ResultType.SUCCESS) Color.WHITE else colorError
         badgePaint.alpha = (badgeAlpha * 255).toInt().coerceIn(0, 255)
         canvas.drawCircle(centerX, centerY, badgeRadius * badgeScale, badgePaint)
 
