@@ -103,10 +103,7 @@
     <!-- NFC Payment Animation -->
     <!-- NFC payment overlay: loader and result badge share one slot -->
     <dimen name="nfc_indicator_size">96dp</dimen>
-    <dimen name="nfc_loader_track_thickness">6dp</dimen>
-    <dimen name="nfc_loader_track_gap">6dp</dimen>
-    <dimen name="nfc_loader_wave_amplitude">3dp</dimen>
-    <dimen name="nfc_loader_wavelength">26dp</dimen>
+    <dimen name="nfc_loader_track_thickness">5dp</dimen>
     <dimen name="nfc_result_icon_stroke_width">7dp</dimen>
 
     <!-- 3D Card Effects -->

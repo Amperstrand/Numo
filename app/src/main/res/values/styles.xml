@@ -287,15 +287,13 @@
         <item name="elevation">0dp</item>
     </style>
 
-    <!-- NFC payment loader: large, neutral M3 Expressive wavy spinner (green is reserved for success) -->
-    <style name="Widget.Numo.NfcLoader" parent="Widget.Material3Expressive.CircularProgressIndicator.Wavy">
+    <!-- NFC payment loader: large, neutral classic spinner (green is reserved for success) -->
+    <style name="Widget.Numo.NfcLoader" parent="Widget.Material3.CircularProgressIndicator">
         <item name="indicatorSize">@dimen/nfc_indicator_size</item>
         <item name="trackThickness">@dimen/nfc_loader_track_thickness</item>
-        <item name="indicatorTrackGapSize">@dimen/nfc_loader_track_gap</item>
-        <item name="waveAmplitude">@dimen/nfc_loader_wave_amplitude</item>
-        <item name="wavelength">@dimen/nfc_loader_wavelength</item>
         <item name="indicatorColor">@color/color_text_primary</item>
-        <item name="trackColor">@color/color_divider</item>
+        <item name="indeterminateTrackVisible">false</item>
+        <item name="indeterminateAnimationTypeCircular">advance</item>
     </style>
 
     <!-- Chip text without a colour, so chip styles can supply a checked-state selector -->
