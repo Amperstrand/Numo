@@ -192,11 +192,17 @@ class PaymentRequestActivity : AppCompatActivity() {
     private var pendingNfcSuccessAmount: Long = 0
     private var currentOverlayActionMode: OverlayActionMode = OverlayActionMode.SUCCESS
     private var isProcessingNfcPayment = false
+    // A received NFC token is being redeemed; leaving now would drop the result on the floor.
+    private var isRedeemingToken = false
+    // The merchant cancelled before any result; a success that still lands is recorded silently.
+    private var cancelledBeforeOutcome = false
 
     private var hcePaymentCallback: NdefHostCardEmulationService.CashuPaymentCallback? = null
     private var nfcSetupRunnable: Runnable? = null
     private val nfcSetupHandler = Handler(Looper.getMainLooper())
 
+    // Deliberately not lifecycle-bound: a redemption or swap that is already under way must
+    // finish (and be recorded) even if the screen goes away mid-flight.
     private val uiScope = CoroutineScope(Dispatchers.Main)
 
     // NFC animation timing diagnostics
@@ -434,7 +440,11 @@ class PaymentRequestActivity : AppCompatActivity() {
 
         // If resuming a local Lightning payment, auto-switch to Lightning tab.
         // BTCPay resume uses resumeLightningQuoteId for the invoice ID — don't switch tab for it.
-        if (isResumingPayment && resumeLightningQuoteId != null && paymentService !is BTCPayPaymentService) {
+        // A retry after a failed tap stays on the default tab.
+        val isRetry = intent.getBooleanExtra(EXTRA_IS_RETRY, false)
+        if (isResumingPayment && resumeLightningQuoteId != null &&
+            paymentService !is BTCPayPaymentService && !isRetry
+        ) {
             tabManager.selectTab(PaymentTabManager.PaymentTab.LIGHTNING)
         }
     }
@@ -576,6 +586,10 @@ class PaymentRequestActivity : AppCompatActivity() {
             animateSuccessScreenOut()
             return
         }
+        if (isRedeemingToken) {
+            Log.d(TAG, "Back ignored: token redemption in progress")
+            return
+        }
         cancelPayment()
         super.onBackPressed()
     }
@@ -614,7 +628,8 @@ class PaymentRequestActivity : AppCompatActivity() {
         
         // Re-start and re-setup HCE service in case it was killed while backgrounded
         val ndefAvailable = NdefHostCardEmulationService.isHceAvailable(this)
-        if (ndefAvailable && hcePaymentRequest != null) {
+        // Never re-arm a request whose payment already finished (e.g. back from View details)
+        if (ndefAvailable && hcePaymentRequest != null && !hasTerminalOutcome) {
             val serviceIntent = Intent(this, NdefHostCardEmulationService::class.java)
             startService(serviceIntent)
             setupNdefPayment()
@@ -1001,6 +1016,7 @@ class PaymentRequestActivity : AppCompatActivity() {
     }
 
     private fun setHceToCashu() {
+        if (hasTerminalOutcome) return
         val request = hcePaymentRequest ?: run {
             Log.w(TAG, "setHceToCashu() called but hcePaymentRequest is null")
             return
@@ -1021,6 +1037,7 @@ class PaymentRequestActivity : AppCompatActivity() {
     }
 
     private fun setHceToLightning() {
+        if (hasTerminalOutcome) return
         val invoice = lightningInvoice ?: run {
             Log.w(TAG, "setHceToLightning() called but lightningInvoice is null")
             return
@@ -1043,6 +1060,7 @@ class PaymentRequestActivity : AppCompatActivity() {
     }
 
     private fun setHceToUnified() {
+        if (hasTerminalOutcome) return
         // In BTCPay mode hcePaymentRequestBech32 is not set; fall back to stripped cashuPR
         val creq = hcePaymentRequestBech32 ?: hcePaymentRequest
         val lnbc = lightningInvoice
@@ -1251,10 +1269,12 @@ class PaymentRequestActivity : AppCompatActivity() {
     }
 
     private fun setupNdefPayment() {
+        if (hasTerminalOutcome) return
         val request = hcePaymentRequest ?: return
 
         // Match original behavior: slight delay before configuring service
         nfcSetupRunnable = Runnable {
+            if (hasTerminalOutcome) return@Runnable
             val hceService = NdefHostCardEmulationService.getInstance()
             if (hceService != null) {
                 Log.d(TAG, "Setting up NDEF payment with HCE service")
@@ -1291,6 +1311,7 @@ class PaymentRequestActivity : AppCompatActivity() {
                             
                             // Mark as processing immediately to lock out subsequent NFC reads
                             isProcessingNfcPayment = true
+                            isRedeemingToken = true
 
                             // Transition UI to PROCESSING stage
                             runOnUiThread {
@@ -1380,6 +1401,8 @@ class PaymentRequestActivity : AppCompatActivity() {
                                 withContext(Dispatchers.Main) {
                                     handlePaymentError("NDEF Payment failed: ${e.message}")
                                 }
+                            } finally {
+                                isRedeemingToken = false
                             }
                         }
                     }
@@ -1436,7 +1459,17 @@ class PaymentRequestActivity : AppCompatActivity() {
         // Only process the first terminal outcome (success or failure). Late
         // callbacks from Nostr/HCE after we've already completed this payment
         // should be ignored so we don't show a failure screen after success.
-        if (!beginTerminalOutcome("cashu_success")) return
+        if (!beginTerminalOutcome("cashu_success")) {
+            if (cancelledBeforeOutcome) {
+                // The merchant left while this payment was landing; the funds are in the
+                // wallet, so keep the record, webhook and post-payment work without any UI.
+                cancelledBeforeOutcome = false
+                Log.w(TAG, "Cashu payment landed after cancel; recording it")
+                recordCashuSuccess(token)
+                triggerPostPaymentOperations(token)
+            }
+            return
+        }
 
         Log.d(TAG, "Payment successful! Token: $token")
         cancelNfcSafetyTimeout()
@@ -1444,6 +1477,19 @@ class PaymentRequestActivity : AppCompatActivity() {
         statusText.visibility = View.VISIBLE
         statusText.text = getString(R.string.payment_request_status_success)
 
+        recordCashuSuccess(token)
+
+        val resultIntent = Intent().apply {
+            putExtra(RESULT_EXTRA_TOKEN, token)
+            putExtra(RESULT_EXTRA_AMOUNT, paymentAmount)
+        }
+        setResult(Activity.RESULT_OK, resultIntent)
+
+        showPaymentSuccess(token, paymentAmount)
+    }
+
+    /** Completes the pending history entry for a Cashu payment and sends the webhook. */
+    private fun recordCashuSuccess(token: String) {
         // Extract mint URL from token
         val mintUrl = try {
             org.cashudevkit.Token.decode(token).mintUrl().url
@@ -1453,13 +1499,13 @@ class PaymentRequestActivity : AppCompatActivity() {
 
         // Update pending payment to completed (Cashu payment path)
         pendingPaymentId?.let { paymentId ->
-            val creq = nostrHandler?.paymentRequestBech32 
-                ?: hcePaymentRequestBech32 
-                ?: btcPayCashuPRBech32 
-                ?: btcPayCashuPR 
+            val creq = nostrHandler?.paymentRequestBech32
+                ?: hcePaymentRequestBech32
+                ?: btcPayCashuPRBech32
+                ?: btcPayCashuPR
                 ?: hcePaymentRequest
             PaymentsHistoryActivity.completePendingPayment(
-                context = this,
+                context = applicationContext,
                 paymentId = paymentId,
                 token = token,
                 paymentType = PaymentHistoryEntry.TYPE_CASHU,
@@ -1469,14 +1515,6 @@ class PaymentRequestActivity : AppCompatActivity() {
         }
 
         dispatchPaymentReceivedWebhook()
-
-        val resultIntent = Intent().apply {
-            putExtra(RESULT_EXTRA_TOKEN, token)
-            putExtra(RESULT_EXTRA_AMOUNT, paymentAmount)
-        }
-        setResult(Activity.RESULT_OK, resultIntent)
-
-        showPaymentSuccess(token, paymentAmount)
     }
 
     /**
@@ -1491,20 +1529,42 @@ class PaymentRequestActivity : AppCompatActivity() {
     ) {
         // Guard against late callbacks so we don't surface a failure screen
         // after a successful Lightning payment has already been processed.
-        if (!beginTerminalOutcome("lightning_success")) return
+        if (!beginTerminalOutcome("lightning_success")) {
+            if (cancelledBeforeOutcome) {
+                // Same as the Cashu path: record a payment that landed after the merchant left.
+                cancelledBeforeOutcome = false
+                Log.w(TAG, "Lightning payment landed after cancel; recording it")
+                recordLightningSuccess(paymentType, btcPayInvoiceId)
+                triggerPostPaymentOperations("")
+            }
+            return
+        }
 
         Log.d(TAG, "Lightning payment successful (no Cashu token)")
         cancelNfcSafetyTimeout()
 
-        WalletLogger.log("IN", paymentAmount, lightningMintUrl ?: "Unknown", "Lightning payment successful (NFC)")
-
         statusText.visibility = View.VISIBLE
         statusText.text = getString(R.string.payment_request_status_success)
+
+        recordLightningSuccess(paymentType, btcPayInvoiceId)
+
+        val resultIntent = Intent().apply {
+            putExtra(RESULT_EXTRA_TOKEN, "")
+            putExtra(RESULT_EXTRA_AMOUNT, paymentAmount)
+        }
+        setResult(Activity.RESULT_OK, resultIntent)
+
+        showPaymentSuccess("", paymentAmount)
+    }
+
+    /** Completes the pending history entry for a Lightning payment and sends the webhook. */
+    private fun recordLightningSuccess(paymentType: String, btcPayInvoiceId: String?) {
+        WalletLogger.log("IN", paymentAmount, lightningMintUrl ?: "Unknown", "Lightning payment successful (NFC)")
 
         // Update pending payment to completed with Lightning info
         pendingPaymentId?.let { paymentId ->
             PaymentsHistoryActivity.completePendingPayment(
-                context = this,
+                context = applicationContext,
                 paymentId = paymentId,
                 token = "",
                 paymentType = paymentType,
@@ -1517,14 +1577,6 @@ class PaymentRequestActivity : AppCompatActivity() {
         }
 
         dispatchPaymentReceivedWebhook()
-
-        val resultIntent = Intent().apply {
-            putExtra(RESULT_EXTRA_TOKEN, "")
-            putExtra(RESULT_EXTRA_AMOUNT, paymentAmount)
-        }
-        setResult(Activity.RESULT_OK, resultIntent)
-
-        showPaymentSuccess("", paymentAmount)
     }
 
     /**
@@ -1603,6 +1655,11 @@ class PaymentRequestActivity : AppCompatActivity() {
             return
         }
 
+        if (isRedeemingToken) {
+            Log.d(TAG, "Cancel ignored: token redemption in progress")
+            return
+        }
+
         Log.d(TAG, "Payment cancelled")
 
         // Note: We don't cancel the pending payment here - user might want to resume it later
@@ -1610,6 +1667,7 @@ class PaymentRequestActivity : AppCompatActivity() {
 
         // Treat user cancellation as a terminal outcome for this Activity so
         // any late error callbacks from background flows are ignored.
+        if (!hasTerminalOutcome) cancelledBeforeOutcome = true
         hasTerminalOutcome = true
 
         setResult(Activity.RESULT_CANCELED)
@@ -1775,13 +1833,13 @@ class PaymentRequestActivity : AppCompatActivity() {
             animateSuccessScreenOut()
         }
         animationViewDetailsButton.setOnClickListener {
-            openLatestTransactionDetails()
+            openPaymentDetails()
         }
         animationErrorCloseButton.setOnClickListener {
             animateSuccessScreenOut()
         }
         animationTryAgainButton.setOnClickListener {
-            retryLatestPendingPayment()
+            retryPayment()
         }
 
         nfcAnimationView.setAnchor(nfcIndicatorSlot)
@@ -2284,37 +2342,32 @@ class PaymentRequestActivity : AppCompatActivity() {
         }
     }
 
-    private fun retryLatestPendingPayment() {
-        val history = PaymentsHistoryActivity.getPaymentHistory(this)
-        val latestPending: PaymentHistoryEntry? = history
-            .filter { it.isPending() }
-            .maxByOrNull { it.date.time }
+    /** Charges this payment again; the retry reports back to whoever started this one. */
+    private fun retryPayment() {
+        val entry = pendingPaymentId?.let { PaymentsHistoryActivity.getPaymentEntryById(this, it) }
+        val retryIntent = PaymentIntentFactory.createRetryPaymentIntent(this, intent, entry)
 
-        if (latestPending == null) {
+        if (retryIntent == null) {
             Toast.makeText(this, R.string.payment_failure_error_no_pending, Toast.LENGTH_SHORT).show()
             return
         }
 
-        startActivity(PaymentIntentFactory.createResumePaymentIntent(this, latestPending))
+        // Plain startActivity: FLAG_ACTIVITY_FORWARD_RESULT hands our caller to the retry
+        startActivity(retryIntent)
         cleanupAndFinish()
     }
 
-    private fun openLatestTransactionDetails() {
+    private fun openPaymentDetails() {
         val history = PaymentsHistoryActivity.getPaymentHistory(this)
-        val entry = history.lastOrNull()
+        val detailsIntent =
+            PaymentIntentFactory.createPaymentDetailsIntent(this, history, pendingPaymentId)
 
-        if (entry == null) {
+        if (detailsIntent == null) {
             Toast.makeText(this, R.string.payment_received_error_no_details, Toast.LENGTH_SHORT).show()
             return
         }
 
-        startActivity(
-            PaymentIntentFactory.createTransactionDetailIntent(
-                context = this,
-                entry = entry,
-                position = history.size - 1,
-            ),
-        )
+        startActivity(detailsIntent)
     }
 
     private fun dpToPx(dp: Float): Int {
@@ -2347,6 +2400,7 @@ class PaymentRequestActivity : AppCompatActivity() {
 
         // Extras for resuming pending payments
         const val EXTRA_RESUME_PAYMENT_ID = "resume_payment_id"
+        const val EXTRA_IS_RETRY = "is_retry"
         const val EXTRA_LIGHTNING_QUOTE_ID = "lightning_quote_id"
         const val EXTRA_LIGHTNING_MINT_URL = "lightning_mint_url"
         const val EXTRA_LIGHTNING_INVOICE = "lightning_invoice"

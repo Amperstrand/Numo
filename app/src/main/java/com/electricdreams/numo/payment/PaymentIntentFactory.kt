@@ -15,6 +15,16 @@ import com.electricdreams.numo.feature.history.TransactionDetailActivity
  */
 object PaymentIntentFactory {
 
+    // Extras that tie a request to one earlier attempt; a retry works them out afresh.
+    private val RESUME_EXTRAS = listOf(
+        PaymentRequestActivity.EXTRA_RESUME_PAYMENT_ID,
+        PaymentRequestActivity.EXTRA_LIGHTNING_QUOTE_ID,
+        PaymentRequestActivity.EXTRA_LIGHTNING_MINT_URL,
+        PaymentRequestActivity.EXTRA_LIGHTNING_INVOICE,
+        PaymentRequestActivity.EXTRA_NOSTR_SECRET_HEX,
+        PaymentRequestActivity.EXTRA_NOSTR_NPROFILE,
+    )
+
     fun createResumePaymentIntent(
         context: Context,
         entry: PaymentHistoryEntry,
@@ -40,6 +50,48 @@ object PaymentIntentFactory {
                 putExtra(PaymentRequestActivity.EXTRA_NOSTR_NPROFILE, it)
             }
         }
+    }
+
+    /**
+     * Charges a payment again with the same amount, tip and basket as [original]. While
+     * [entry] is still pending it is resumed; once it expired or failed a fresh request
+     * starts. Returns null when the payment already completed, so it is never charged twice.
+     *
+     * The retry reports back to whoever started [original] (POS keypad or history), so
+     * launch it with plain startActivity.
+     */
+    fun createRetryPaymentIntent(
+        context: Context,
+        original: Intent,
+        entry: PaymentHistoryEntry?,
+    ): Intent? {
+        if (entry?.isCompleted() == true) return null
+
+        return Intent(context, PaymentRequestActivity::class.java).apply {
+            original.extras?.let { putExtras(it) }
+            RESUME_EXTRAS.forEach { removeExtra(it) }
+            if (entry?.isPending() == true) {
+                createResumePaymentIntent(context, entry).extras?.let { putExtras(it) }
+            }
+            putExtra(PaymentRequestActivity.EXTRA_IS_RETRY, true)
+            addFlags(Intent.FLAG_ACTIVITY_FORWARD_RESULT)
+        }
+    }
+
+    /**
+     * Details for the payment with [paymentId], or for the latest entry when it isn't in
+     * [history]. Null when there is no history at all.
+     */
+    fun createPaymentDetailsIntent(
+        context: Context,
+        history: List<PaymentHistoryEntry>,
+        paymentId: String?,
+    ): Intent? {
+        if (history.isEmpty()) return null
+        val index = history.indexOfFirst { it.id == paymentId }
+            .takeIf { it >= 0 }
+            ?: history.lastIndex
+        return createTransactionDetailIntent(context, history[index], index)
     }
 
     fun createTransactionDetailIntent(
