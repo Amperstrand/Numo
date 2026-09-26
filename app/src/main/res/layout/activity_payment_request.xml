@@ -434,8 +434,22 @@
                         style="@style/Text.DisplayAmount"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:maxLines="2"
-                        android:visibility="invisible" />
+                        android:maxLines="1"
+                        android:visibility="invisible"
+                        app:autoSizeTextType="uniform"
+                        app:autoSizeMinTextSize="24sp"
+                        app:autoSizeMaxTextSize="48sp"
+                        app:autoSizeStepGranularity="2sp" />
+
+                    <!-- Converted amount and tip, as on the payment screen -->
+                    <TextView
+                        android:id="@+id/animation_result_secondary"
+                        style="@style/Text.Body"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_xs"
+                        android:gravity="center"
+                        android:visibility="gone" />
 
                     <!-- Loader and result badge share this slot -->
                     <FrameLayout
@@ -501,7 +515,7 @@
                 android:layout_marginBottom="@dimen/space_3xl"
                 android:visibility="invisible">
 
-                <!-- Success: sits on the green reveal -->
+                <!-- Success: ink actions on the settled green, the same in both themes -->
                 <LinearLayout
                     android:id="@+id/animation_success_actions"
                     android:layout_width="match_parent"
@@ -509,29 +523,21 @@
                     android:layout_gravity="bottom"
                     android:orientation="vertical">
 
-                    <TextView
+                    <Button
                         android:id="@+id/animation_view_details_button"
-                        style="@style/Text.Button"
-                        android:layout_width="match_parent"
-                        android:layout_height="44dp"
-                        android:background="?attr/selectableItemBackground"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:text="@string/payment_received_button_view_details"
-                        android:textColor="@android:color/white" />
+                        style="@style/Widget.Numo.Button.OnSettled.Text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal"
+                        android:text="@string/payment_overlay_view_details" />
 
-                    <TextView
+                    <Button
                         android:id="@+id/animation_close_button"
-                        style="@style/Text.Button"
+                        style="@style/Widget.Numo.Button.OnSettled"
                         android:layout_width="match_parent"
-                        android:layout_height="@dimen/button_height"
+                        android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/space_m"
-                        android:background="@drawable/bg_button_black"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:foreground="?attr/selectableItemBackground"
-                        android:text="@string/payment_request_animation_close"
-                        android:textColor="@color/color_text_on_dark" />
+                        android:text="@string/payment_request_animation_close" />
                 </LinearLayout>
 
                 <!-- Error: sits on the app background, so it uses the app's standard buttons -->
@@ -547,14 +553,15 @@
                         android:id="@+id/animation_try_again_button"
                         style="@style/Widget.Button.Primary.Green"
                         android:layout_width="match_parent"
-                        android:layout_height="@dimen/button_height"
+                        android:layout_height="wrap_content"
                         android:text="@string/payment_failure_button_try_again" />
 
                     <Button
                         android:id="@+id/animation_error_close_button"
                         style="@style/Widget.Button.Secondary.Outlined"
                         android:layout_width="match_parent"
-                        android:layout_height="@dimen/button_height"
+                        android:layout_height="wrap_content"
+                        android:minHeight="@dimen/button_height"
                         android:layout_marginTop="@dimen/space_m"
                         android:text="@string/payment_failure_button_close" />
                 </LinearLayout>

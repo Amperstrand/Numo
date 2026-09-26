@@ -14,4 +14,6 @@
     <string name="payment_error_already_spent">이미 사용된 결제입니다.</string>
     <string name="payment_error_timeout">결제 시간이 너무 오래 걸렸습니다.</string>
     <string name="payment_error_unknown">문제가 발생했습니다.</string>
+    <string name="payment_overlay_received">결제 완료</string>
+    <string name="payment_overlay_view_details">세부정보 보기</string>
 </resources>

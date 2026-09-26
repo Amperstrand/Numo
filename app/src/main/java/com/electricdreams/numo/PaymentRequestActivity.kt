@@ -6,7 +6,7 @@ import android.app.Activity
 import android.content.Intent
 import android.content.ComponentName
 import android.content.res.Configuration
-import android.graphics.Color
+import android.graphics.RectF
 import android.nfc.NfcAdapter
 import android.nfc.cardemulation.CardEmulation
 import android.os.Build
@@ -107,14 +107,15 @@ class PaymentRequestActivity : AppCompatActivity() {
     private lateinit var nfcIndicatorSlot: View
     private lateinit var nfcLoader: CircularProgressIndicator
     private lateinit var animationResultAmountText: TextView
+    private lateinit var animationResultSecondaryText: TextView
     private lateinit var animationResultLabelText: TextView
     private lateinit var nfcResultReasonText: TextView
     private lateinit var nfcResultReassuranceText: TextView
     private lateinit var animationActionsContainer: View
     private lateinit var animationSuccessActions: View
     private lateinit var animationErrorActions: View
-    private lateinit var animationViewDetailsButton: TextView
-    private lateinit var animationCloseButton: TextView
+    private lateinit var animationViewDetailsButton: Button
+    private lateinit var animationCloseButton: Button
     private lateinit var animationTryAgainButton: Button
     private lateinit var animationErrorCloseButton: Button
     
@@ -283,6 +284,7 @@ class PaymentRequestActivity : AppCompatActivity() {
         nfcIndicatorSlot = findViewById(R.id.nfc_indicator_slot)
         nfcLoader = findViewById(R.id.nfc_loader)
         animationResultAmountText = findViewById(R.id.animation_result_amount)
+        animationResultSecondaryText = findViewById(R.id.animation_result_secondary)
         animationResultLabelText = findViewById(R.id.animation_result_label)
         nfcResultReasonText = findViewById(R.id.nfc_result_reason)
         nfcResultReassuranceText = findViewById(R.id.nfc_result_reassurance)
@@ -522,8 +524,10 @@ class PaymentRequestActivity : AppCompatActivity() {
             return
         }
 
-        // Check if the formatted amount is BTC (satoshis) or fiat
-        val isBtcAmount = formattedAmountString.startsWith("₿")
+        // Check if the formatted amount is BTC (satoshis) or fiat. BTC amounts are
+        // written "1,000 sat" now; "₿1,000" is the older form.
+        val isBtcAmount = formattedAmountString.startsWith("₿") ||
+            formattedAmountString.endsWith(Currency.BTC.symbol)
 
         val hasBitcoinPrice = (bitcoinPriceWorker?.getCurrentPrice() ?: 0.0) > 0
 
@@ -1861,6 +1865,7 @@ class PaymentRequestActivity : AppCompatActivity() {
 
         animationResultAmountText.text = formattedAmountString
         animationResultAmountText.visibility = View.VISIBLE
+        bindOverlaySecondaryLine()
 
         if (loading) {
             nfcLoader.visibility = View.VISIBLE
@@ -1976,16 +1981,45 @@ class PaymentRequestActivity : AppCompatActivity() {
 
         currentOverlayActionMode = OverlayActionMode.SUCCESS
         animationResultAmountText.text = amountText
-        animationResultLabelText.text = getString(R.string.transaction_detail_type_payment_received)
+        animationResultLabelText.text = getString(R.string.payment_overlay_received)
 
         revealResultAfterMinimumLoading {
-            overlayOnSuccessColor = true
             fadeOutLoading()
-            animateAmountColor(Color.WHITE)
-            applyFullscreenForAnimationOverlay()
+            // Ink goes on as the green reaches each part, so nothing is ever ink on the
+            // app background or a blend of the two.
+            nfcAnimationView.doOnRevealCovering(animationResultSecondaryText) {
+                animationResultSecondaryText.setTextColor(
+                    ContextCompat.getColor(this, R.color.color_on_settled_secondary)
+                )
+            }
+            nfcAnimationView.doOnRevealCovering(animationResultAmountText) {
+                amountColorAnimator?.cancel()
+                animationResultAmountText.setTextColor(
+                    ContextCompat.getColor(this, R.color.color_on_settled)
+                )
+            }
+            val statusBarEdge = { RectF(0f, 0f, nfcAnimationView.width.toFloat(), 0f) }
+            nfcAnimationView.doOnRevealCovering(statusBarEdge) {
+                overlayOnSuccessColor = true
+                applyFullscreenForAnimationOverlay()
+            }
             nfcAnimationView.showSuccess()
             playNfcSuccessFeedback()
         }
+    }
+
+    /** Converted amount and tip under the overlay amount, as the payment screen shows them. */
+    private fun bindOverlaySecondaryLine() {
+        val converted = convertedAmountDisplay.text?.toString()
+            ?.takeIf { convertedAmountDisplay.visibility == View.VISIBLE }
+        val tip = if (::tipInfoText.isInitialized && tipInfoText.visibility == View.VISIBLE) {
+            tipInfoText.text?.toString()
+        } else {
+            null
+        }
+        val lines = listOfNotNull(converted, tip).filter { it.isNotBlank() }
+        animationResultSecondaryText.text = lines.joinToString("\n")
+        animationResultSecondaryText.visibility = if (lines.isEmpty()) View.GONE else View.VISIBLE
     }
 
     private fun playNfcSuccessFeedback() {
@@ -2035,7 +2069,7 @@ class PaymentRequestActivity : AppCompatActivity() {
             .start()
     }
 
-    /** Recolours the amount in step with the result (white on the green reveal). */
+    /** Recolours the amount on the app background (greyed out after a failure). */
     private fun animateAmountColor(targetColor: Int) {
         amountColorAnimator?.cancel()
         val startColor = animationResultAmountText.currentTextColor
@@ -2109,8 +2143,8 @@ class PaymentRequestActivity : AppCompatActivity() {
 
     /** Brings in the result title (and, for errors, the reason) below the badge. */
     private fun animateResultTextIn(success: Boolean) {
-        val onColor = if (success) Color.WHITE else ContextCompat.getColor(this, R.color.color_text_primary)
-        animationResultLabelText.setTextColor(onColor)
+        val onColor = if (success) R.color.color_on_settled else R.color.color_text_primary
+        animationResultLabelText.setTextColor(ContextCompat.getColor(this, onColor))
 
         val views = mutableListOf<View>(animationResultLabelText)
         if (!success) {
@@ -2147,6 +2181,7 @@ class PaymentRequestActivity : AppCompatActivity() {
 
         val textViews = listOf(
             animationResultAmountText,
+            animationResultSecondaryText,
             animationResultLabelText,
             nfcResultReasonText,
             nfcResultReassuranceText,
@@ -2160,6 +2195,12 @@ class PaymentRequestActivity : AppCompatActivity() {
         animationResultAmountText.visibility = View.INVISIBLE
         animationResultAmountText.text = ""
         animationResultAmountText.setTextColor(ContextCompat.getColor(this, R.color.color_text_primary))
+
+        animationResultSecondaryText.visibility = View.GONE
+        animationResultSecondaryText.text = ""
+        animationResultSecondaryText.setTextColor(
+            ContextCompat.getColor(this, R.color.color_text_secondary)
+        )
 
         animationResultLabelText.visibility = View.INVISIBLE
         animationResultLabelText.text = ""
@@ -2200,7 +2241,8 @@ class PaymentRequestActivity : AppCompatActivity() {
      * turn light once the success green has been revealed.
      */
     private fun applyFullscreenForAnimationOverlay() {
-        val darkIcons = !overlayOnSuccessColor && !isNightMode()
+        // Ink icons on the settled green in both themes, like the rest of its foreground
+        val darkIcons = overlayOnSuccessColor || !isNightMode()
         WindowCompat.setDecorFitsSystemWindows(window, false)
         WindowInsetsControllerCompat(window, window.decorView).apply {
             show(WindowInsetsCompat.Type.statusBars() or WindowInsetsCompat.Type.navigationBars())

@@ -10,13 +10,16 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.PathMeasure
+import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.View
 import android.view.ViewTreeObserver
 import android.view.animation.PathInterpolator
+import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.withScale
 import com.electricdreams.numo.R
+import kotlin.math.abs
 import kotlin.math.hypot
 import kotlin.math.max
 import kotlin.math.min
@@ -25,8 +28,9 @@ import kotlin.math.min
  * Draws the result moment of the NFC payment overlay, centred on an anchor view
  * (the slot that holds the loading spinner) so the result grows out of the loader:
  *
- * - Success: a full-screen green reveal growing from the anchor, then a white badge
- *   with a green checkmark drawn in.
+ * - Success: a full-screen green reveal growing from the anchor, then an ink badge
+ *   with a green checkmark drawn in. Views on top switch to ink as the reveal reaches
+ *   them (see [doOnRevealCovering]).
  * - Error: a red badge with a white ✕ drawn in, over the app background.
  *
  * The loading spinner is a Material progress indicator owned by the layout. With system
@@ -43,6 +47,7 @@ class NfcPaymentAnimationView @JvmOverloads constructor(
     private enum class ResultType { SUCCESS, ERROR }
 
     private val colorSuccess = ContextCompat.getColor(context, R.color.color_nfc_success)
+    private val colorOnSettled = ContextCompat.getColor(context, R.color.color_on_settled)
     private val colorError = ContextCompat.getColor(context, R.color.color_error)
 
     private val revealPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -70,6 +75,7 @@ class NfcPaymentAnimationView @JvmOverloads constructor(
     private var anchor: View? = null
     private val anchorLocation = IntArray(2)
     private val ownLocation = IntArray(2)
+    private val targetLocation = IntArray(2)
     private var centerX = 0f
     private var centerY = 0f
     private var badgeRadius = resources.getDimension(R.dimen.nfc_indicator_size) / 2f
@@ -82,6 +88,10 @@ class NfcPaymentAnimationView @JvmOverloads constructor(
 
     private var transitionAnimator: AnimatorSet? = null
     private var onResultDisplayedListener: ((Boolean) -> Unit)? = null
+
+    private class CoverAction(val area: () -> RectF?, val action: () -> Unit)
+
+    private val coverActions = mutableListOf<CoverAction>()
 
     // Keeps the badge on the anchor when the content around it re-lays out (e.g. the
     // error reason appearing below, or a large font scale making the column scroll).
@@ -114,8 +124,24 @@ class NfcPaymentAnimationView @JvmOverloads constructor(
         startResultTransition(ResultType.ERROR)
     }
 
+    /**
+     * Runs [action] once the success reveal has spread over [area] (this view's coordinates,
+     * re-read on every frame; null while it can't be measured yet). Runs straight away if the
+     * area is already covered. Never runs for an error, and [reset] drops it.
+     */
+    fun doOnRevealCovering(area: () -> RectF?, action: () -> Unit) {
+        coverActions += CoverAction(area, action)
+        runCoveredActions()
+    }
+
+    /** [doOnRevealCovering] for [target]; for text, its glyphs rather than the whole view. */
+    fun doOnRevealCovering(target: View, action: () -> Unit) {
+        doOnRevealCovering({ boundsOf(target) }, action)
+    }
+
     fun reset() {
         cancelAnimations()
+        coverActions.clear()
         state = State.IDLE
         resultType = null
         revealFraction = 0f
@@ -138,6 +164,7 @@ class NfcPaymentAnimationView @JvmOverloads constructor(
             badgeAlpha = 1f
             glyphProgress = 1f
             state = State.RESULT
+            runCoveredActions()
             invalidate()
             post { onResultDisplayedListener?.invoke(target == ResultType.SUCCESS) }
             return
@@ -149,6 +176,7 @@ class NfcPaymentAnimationView @JvmOverloads constructor(
         if (target == ResultType.SUCCESS) {
             animators += floatAnimator(REVEAL_DURATION_MS, 0L, EMPHASIZED_DECELERATE) {
                 revealFraction = it
+                runCoveredActions()
             }
             badgeDelay = SUCCESS_BADGE_DELAY_MS
             glyphDelay = SUCCESS_GLYPH_DELAY_MS
@@ -178,6 +206,7 @@ class NfcPaymentAnimationView @JvmOverloads constructor(
                 override fun onAnimationEnd(animation: Animator) {
                     if (cancelled) return
                     state = State.RESULT
+                    runCoveredActions()
                     onResultDisplayedListener?.invoke(resultType == ResultType.SUCCESS)
                 }
             })
@@ -203,6 +232,53 @@ class NfcPaymentAnimationView @JvmOverloads constructor(
     private fun cancelAnimations() {
         transitionAnimator?.cancel()
         transitionAnimator = null
+    }
+
+    private fun runCoveredActions() {
+        if (resultType != ResultType.SUCCESS || coverActions.isEmpty()) return
+        val radius = maxRevealRadius * revealFraction
+        val covered = coverActions.filter { cover ->
+            if (revealFraction >= 1f) return@filter true
+            val area = cover.area() ?: return@filter false
+            farthestCornerDistance(area) <= radius
+        }
+        if (covered.isEmpty()) return
+        coverActions.removeAll(covered)
+        covered.forEach { it.action() }
+    }
+
+    private fun farthestCornerDistance(area: RectF): Float {
+        val dx = max(abs(area.left - centerX), abs(area.right - centerX))
+        val dy = max(abs(area.top - centerY), abs(area.bottom - centerY))
+        return hypot(dx, dy)
+    }
+
+    private fun boundsOf(target: View): RectF? {
+        if (target.width == 0 || target.height == 0) return null
+        target.getLocationInWindow(targetLocation)
+        getLocationInWindow(ownLocation)
+        val left = (targetLocation[0] - ownLocation[0]).toFloat()
+        val top = (targetLocation[1] - ownLocation[1]).toFloat()
+
+        val textLayout = (target as? TextView)?.layout
+        if (textLayout == null || textLayout.lineCount == 0) {
+            return RectF(left, top, left + target.width, top + target.height)
+        }
+        // Centred text sits in a much wider view; only the glyphs need to be on green
+        var textLeft = Float.MAX_VALUE
+        var textRight = 0f
+        for (line in 0 until textLayout.lineCount) {
+            textLeft = min(textLeft, textLayout.getLineLeft(line))
+            textRight = max(textRight, textLayout.getLineRight(line))
+        }
+        val x = left + target.totalPaddingLeft - target.scrollX
+        val y = top + target.totalPaddingTop - target.scrollY
+        return RectF(
+            x + textLeft,
+            y + textLayout.getLineTop(0),
+            x + textRight,
+            y + textLayout.getLineBottom(textLayout.lineCount - 1),
+        )
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
@@ -247,7 +323,7 @@ class NfcPaymentAnimationView @JvmOverloads constructor(
         }
 
         if (badgeScale <= 0f) return
-        badgePaint.color = if (result == ResultType.SUCCESS) Color.WHITE else colorError
+        badgePaint.color = if (result == ResultType.SUCCESS) colorOnSettled else colorError
         badgePaint.alpha = (badgeAlpha * 255).toInt().coerceIn(0, 255)
         canvas.drawCircle(centerX, centerY, badgeRadius * badgeScale, badgePaint)
 

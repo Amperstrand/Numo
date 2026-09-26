@@ -14,4 +14,6 @@
     <string name="payment_error_already_spent">This payment was already used.</string>
     <string name="payment_error_timeout">The payment took too long.</string>
     <string name="payment_error_unknown">Something went wrong.</string>
+    <string name="payment_overlay_received">Payment received</string>
+    <string name="payment_overlay_view_details">View details</string>
 </resources>

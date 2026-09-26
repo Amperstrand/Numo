@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ink pill on the settled green. Same in both themes, and no disabled state so it
+     doesn't flash while the overlay fades out. -->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="@color/color_ripple_on_dark">
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="@dimen/radius_pill" />
+            <solid android:color="@color/color_on_settled" />
+        </shape>
+    </item>
+</ripple>

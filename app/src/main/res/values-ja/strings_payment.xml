@@ -14,4 +14,6 @@
     <string name="payment_error_already_spent">この支払いはすでに使用されています。</string>
     <string name="payment_error_timeout">支払いに時間がかかりすぎました。</string>
     <string name="payment_error_unknown">問題が発生しました。</string>
+    <string name="payment_overlay_received">支払いを受領しました</string>
+    <string name="payment_overlay_view_details">詳細を見る</string>
 </resources>
