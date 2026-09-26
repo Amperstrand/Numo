@@ -16,4 +16,6 @@
     <string name="payment_error_unknown">問題が発生しました。</string>
     <string name="payment_overlay_received">支払いを受領しました</string>
     <string name="payment_overlay_view_details">詳細を見る</string>
+    <string name="payment_overlay_reading">支払いを読み取り中</string>
+    <string name="payment_overlay_processing">支払いを処理中</string>
 </resources>

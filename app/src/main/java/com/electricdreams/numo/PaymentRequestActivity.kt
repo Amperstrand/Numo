@@ -1957,11 +1957,13 @@ class PaymentRequestActivity : AppCompatActivity() {
     }
 
     /**
-     * The token has arrived. The loader keeps going unchanged; a short buzz tells the
-     * customer the tap registered.
+     * The token has arrived. The spinner settles into a steady full ring and a short buzz
+     * follows: together they are the wordless "you can lift your phone".
      */
     private fun showNfcAnimationProcessing() {
         if (nfcAnimationContainer.visibility != View.VISIBLE) return
+
+        settleLoader()
 
         try {
             val vibrator = getVibrator()
@@ -2108,6 +2110,15 @@ class PaymentRequestActivity : AppCompatActivity() {
             animateAmountColor(ContextCompat.getColor(this, R.color.color_text_secondary))
             nfcAnimationView.showError()
         }
+    }
+
+    /** Turns the reading spinner into a steady full ring while the payment is processed. */
+    private fun settleLoader() {
+        if (!nfcLoader.isIndeterminate) return
+        // Switching mode directly drops the spinning arc; the ring then fills in one sweep
+        nfcLoader.isIndeterminate = false
+        nfcLoader.setProgressCompat(nfcLoader.max, !ReducedMotion.isEnabled(this))
+        nfcLoader.contentDescription = getString(R.string.payment_overlay_processing)
     }
 
     /** Hides the loader as the result badge takes over its slot. */
@@ -2271,6 +2282,11 @@ class PaymentRequestActivity : AppCompatActivity() {
         nfcLoader.alpha = 1f
         nfcLoader.scaleX = 1f
         nfcLoader.scaleY = 1f
+        if (!nfcLoader.isIndeterminate) {
+            nfcLoader.setProgressCompat(0, false)
+            nfcLoader.isIndeterminate = true
+        }
+        nfcLoader.contentDescription = getString(R.string.payment_overlay_reading)
     }
 
     private fun resetResultActionButtons() {

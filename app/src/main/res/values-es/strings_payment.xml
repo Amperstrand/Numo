@@ -16,4 +16,6 @@
     <string name="payment_error_unknown">Algo salió mal.</string>
     <string name="payment_overlay_received">Pago recibido</string>
     <string name="payment_overlay_view_details">Ver detalles</string>
+    <string name="payment_overlay_reading">Leyendo el pago</string>
+    <string name="payment_overlay_processing">Procesando el pago</string>
 </resources>

@@ -16,4 +16,6 @@
     <string name="payment_error_unknown">문제가 발생했습니다.</string>
     <string name="payment_overlay_received">결제 완료</string>
     <string name="payment_overlay_view_details">세부정보 보기</string>
+    <string name="payment_overlay_reading">결제 정보를 읽는 중</string>
+    <string name="payment_overlay_processing">결제 처리 중</string>
 </resources>

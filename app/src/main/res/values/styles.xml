@@ -287,11 +287,13 @@
         <item name="elevation">0dp</item>
     </style>
 
-    <!-- NFC payment loader: large, neutral classic spinner (green is reserved for success) -->
+    <!-- NFC payment loader: large, neutral classic spinner (green is reserved for success).
+         Settles into a full ring when the token arrives, so the track stays invisible. -->
     <style name="Widget.Numo.NfcLoader" parent="Widget.Material3.CircularProgressIndicator">
         <item name="indicatorSize">@dimen/nfc_indicator_size</item>
         <item name="trackThickness">@dimen/nfc_loader_track_thickness</item>
         <item name="indicatorColor">@color/color_text_primary</item>
+        <item name="trackColor">@android:color/transparent</item>
         <item name="indeterminateTrackVisible">false</item>
         <item name="indeterminateAnimationTypeCircular">advance</item>
     </style>
