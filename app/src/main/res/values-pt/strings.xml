@@ -250,8 +250,6 @@ Estes termos podem ser atualizados. O uso continuado implica aceitação.
     <string name="nfc_payment_error_nfc_comm">Erro de comunicação NFC: %1$s</string>
     <string name="nfc_payment_error_satocash">Erro do cartão Satocash: %1$s (SW: 0x%2$04X)</string>
     <string name="nfc_payment_error_unexpected">Ocorreu um erro inesperado: %1$s</string>
-    <string name="nfc_payment_hint_keep_close">Segure o telefone aqui</string>
-    <string name="nfc_payment_hint_processing">Você pode afastar o telefone</string>
     <string name="common_ok">OK</string>
     <string name="common_or">ou</string>
     <string name="withdraw_lightning_toolbar_back">Voltar</string>

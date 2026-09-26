@@ -24,6 +24,7 @@ import android.view.ViewGroup.MarginLayoutParams
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.DecelerateInterpolator
 import com.electricdreams.numo.core.dev.WalletLogger
+import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
@@ -105,14 +106,17 @@ class PaymentRequestActivity : AppCompatActivity() {
     private lateinit var nfcOverlayColumn: View
     private lateinit var nfcIndicatorSlot: View
     private lateinit var nfcLoader: CircularProgressIndicator
-    private lateinit var nfcHintText: TextView
     private lateinit var animationResultAmountText: TextView
     private lateinit var animationResultLabelText: TextView
     private lateinit var nfcResultReasonText: TextView
     private lateinit var nfcResultReassuranceText: TextView
     private lateinit var animationActionsContainer: View
+    private lateinit var animationSuccessActions: View
+    private lateinit var animationErrorActions: View
     private lateinit var animationViewDetailsButton: TextView
     private lateinit var animationCloseButton: TextView
+    private lateinit var animationTryAgainButton: Button
+    private lateinit var animationErrorCloseButton: Button
     
     // Tip-related views
     private lateinit var tipInfoText: TextView
@@ -278,14 +282,17 @@ class PaymentRequestActivity : AppCompatActivity() {
         nfcOverlayColumn = findViewById(R.id.nfc_overlay_column)
         nfcIndicatorSlot = findViewById(R.id.nfc_indicator_slot)
         nfcLoader = findViewById(R.id.nfc_loader)
-        nfcHintText = findViewById(R.id.nfc_hint)
         animationResultAmountText = findViewById(R.id.animation_result_amount)
         animationResultLabelText = findViewById(R.id.animation_result_label)
         nfcResultReasonText = findViewById(R.id.nfc_result_reason)
         nfcResultReassuranceText = findViewById(R.id.nfc_result_reassurance)
         animationActionsContainer = findViewById(R.id.animation_actions_container)
+        animationSuccessActions = findViewById(R.id.animation_success_actions)
+        animationErrorActions = findViewById(R.id.animation_error_actions)
         animationViewDetailsButton = findViewById(R.id.animation_view_details_button)
         animationCloseButton = findViewById(R.id.animation_close_button)
+        animationTryAgainButton = findViewById(R.id.animation_try_again_button)
+        animationErrorCloseButton = findViewById(R.id.animation_error_close_button)
 
         setupNfcAnimationOverlay()
 
@@ -1764,7 +1771,13 @@ class PaymentRequestActivity : AppCompatActivity() {
             animateSuccessScreenOut()
         }
         animationViewDetailsButton.setOnClickListener {
-            onOverlaySecondaryActionPressed()
+            openLatestTransactionDetails()
+        }
+        animationErrorCloseButton.setOnClickListener {
+            animateSuccessScreenOut()
+        }
+        animationTryAgainButton.setOnClickListener {
+            retryLatestPendingPayment()
         }
 
         nfcAnimationView.setAnchor(nfcIndicatorSlot)
@@ -1797,9 +1810,8 @@ class PaymentRequestActivity : AppCompatActivity() {
      * Elegant fade-out animation when closing the terminal result screen.
      */
     private fun animateSuccessScreenOut() {
-        // Disable the button to prevent multiple taps
-        animationCloseButton.isEnabled = false
-        animationViewDetailsButton.isEnabled = false
+        // Disable the buttons to prevent multiple taps
+        setResultActionsEnabled(false)
 
         // Clean up and finish with fade transition
         cleanupAndFinishWithFade()
@@ -1835,7 +1847,7 @@ class PaymentRequestActivity : AppCompatActivity() {
 
     /**
      * Shows the overlay on the app background with the amount being charged. With [loading],
-     * the NFC loader and hint are shown; otherwise the overlay opens straight into a result.
+     * the NFC loader is shown; otherwise the overlay opens straight into a result.
      */
     private fun openPaymentOverlay(loading: Boolean) {
         cancelPendingResultReveal()
@@ -1851,8 +1863,6 @@ class PaymentRequestActivity : AppCompatActivity() {
         animationResultAmountText.visibility = View.VISIBLE
 
         if (loading) {
-            nfcHintText.text = getString(R.string.nfc_payment_hint_keep_close)
-            nfcHintText.visibility = View.VISIBLE
             nfcLoader.visibility = View.VISIBLE
             nfcAnimationStartedAtMs = SystemClock.elapsedRealtime()
         } else {
@@ -1884,8 +1894,8 @@ class PaymentRequestActivity : AppCompatActivity() {
     }
 
     /**
-     * The token has arrived. The loader keeps going unchanged; only the hint changes so the
-     * customer knows they can lift their phone.
+     * The token has arrived. The loader keeps going unchanged; a short buzz tells the
+     * customer the tap registered.
      */
     private fun showNfcAnimationProcessing() {
         if (nfcAnimationContainer.visibility != View.VISIBLE) return
@@ -1896,30 +1906,6 @@ class PaymentRequestActivity : AppCompatActivity() {
         } catch (e: Exception) {
             Log.w(TAG, "Vibration failed", e)
         }
-
-        crossfadeHint(getString(R.string.nfc_payment_hint_processing))
-    }
-
-    private fun crossfadeHint(text: String) {
-        nfcHintText.animate().cancel()
-        if (ReducedMotion.isEnabled(this)) {
-            nfcHintText.text = text
-            nfcHintText.alpha = 1f
-            return
-        }
-        nfcHintText.animate()
-            .alpha(0f)
-            .setDuration(HINT_FADE_OUT_MS)
-            .setInterpolator(AccelerateInterpolator())
-            .withEndAction {
-                nfcHintText.text = text
-                nfcHintText.animate()
-                    .alpha(1f)
-                    .setDuration(HINT_FADE_IN_MS)
-                    .setInterpolator(DecelerateInterpolator())
-                    .start()
-            }
-            .start()
     }
 
     private fun hideNfcAnimationOverlay() {
@@ -2032,13 +2018,11 @@ class PaymentRequestActivity : AppCompatActivity() {
         }
     }
 
-    /** Hides the loader and hint as the result takes over their slot. */
+    /** Hides the loader as the result badge takes over its slot. */
     private fun fadeOutLoading() {
         nfcLoader.animate().cancel()
-        nfcHintText.animate().cancel()
         if (ReducedMotion.isEnabled(this)) {
             nfcLoader.visibility = View.INVISIBLE
-            nfcHintText.visibility = View.INVISIBLE
             return
         }
         nfcLoader.animate()
@@ -2048,12 +2032,6 @@ class PaymentRequestActivity : AppCompatActivity() {
             .setDuration(LOADER_EXIT_MS)
             .setInterpolator(AccelerateInterpolator())
             .withEndAction { nfcLoader.visibility = View.INVISIBLE }
-            .start()
-        nfcHintText.animate()
-            .alpha(0f)
-            .setDuration(LOADER_EXIT_MS)
-            .setInterpolator(AccelerateInterpolator())
-            .withEndAction { nfcHintText.visibility = View.INVISIBLE }
             .start()
     }
 
@@ -2105,38 +2083,12 @@ class PaymentRequestActivity : AppCompatActivity() {
         ViewCompat.requestApplyInsets(nfcAnimationContainer)
 
         currentOverlayActionMode = mode
-        val onGreen = mode == OverlayActionMode.SUCCESS
-        animationViewDetailsButton.text = getString(
-            if (onGreen) {
-                R.string.payment_received_button_view_details
-            } else {
-                R.string.payment_failure_button_try_again
-            }
-        )
-        animationCloseButton.text = getString(
-            if (onGreen) {
-                R.string.payment_request_animation_close
-            } else {
-                R.string.payment_failure_button_close
-            }
-        )
-        // On green the buttons are white text and a black pill; on the app background
-        // they follow the theme's primary colours.
-        animationViewDetailsButton.setTextColor(
-            if (onGreen) Color.WHITE else ContextCompat.getColor(this, R.color.color_text_primary)
-        )
-        animationCloseButton.setBackgroundResource(
-            if (onGreen) R.drawable.bg_button_black else R.drawable.bg_button_primary_black
-        )
-        animationCloseButton.setTextColor(
-            ContextCompat.getColor(
-                this,
-                if (onGreen) R.color.color_text_on_dark else R.color.color_bg_white,
-            )
-        )
+        val success = mode == OverlayActionMode.SUCCESS
+        // INVISIBLE rather than GONE: the container keeps the taller set's height either way
+        animationSuccessActions.visibility = if (success) View.VISIBLE else View.INVISIBLE
+        animationErrorActions.visibility = if (success) View.INVISIBLE else View.VISIBLE
 
-        animationViewDetailsButton.isEnabled = true
-        animationCloseButton.isEnabled = true
+        setResultActionsEnabled(true)
         animationActionsContainer.visibility = View.VISIBLE
 
         if (ReducedMotion.isEnabled(this)) {
@@ -2196,7 +2148,6 @@ class PaymentRequestActivity : AppCompatActivity() {
         val textViews = listOf(
             animationResultAmountText,
             animationResultLabelText,
-            nfcHintText,
             nfcResultReasonText,
             nfcResultReassuranceText,
         )
@@ -2212,8 +2163,6 @@ class PaymentRequestActivity : AppCompatActivity() {
 
         animationResultLabelText.visibility = View.INVISIBLE
         animationResultLabelText.text = ""
-        nfcHintText.visibility = View.INVISIBLE
-        nfcHintText.text = ""
         nfcResultReasonText.visibility = View.GONE
         nfcResultReasonText.text = ""
         nfcResultReassuranceText.visibility = View.GONE
@@ -2232,10 +2181,14 @@ class PaymentRequestActivity : AppCompatActivity() {
         animationActionsContainer.visibility = View.INVISIBLE
         animationActionsContainer.alpha = 0f
         animationActionsContainer.translationY = 0f
-        animationViewDetailsButton.isEnabled = false
-        animationViewDetailsButton.text = getString(R.string.payment_received_button_view_details)
-        animationCloseButton.isEnabled = false
-        animationCloseButton.text = getString(R.string.payment_request_animation_close)
+        setResultActionsEnabled(false)
+    }
+
+    private fun setResultActionsEnabled(enabled: Boolean) {
+        animationViewDetailsButton.isEnabled = enabled
+        animationCloseButton.isEnabled = enabled
+        animationTryAgainButton.isEnabled = enabled
+        animationErrorCloseButton.isEnabled = enabled
     }
 
     private fun isNightMode(): Boolean =
@@ -2289,14 +2242,6 @@ class PaymentRequestActivity : AppCompatActivity() {
         }
     }
 
-    private fun onOverlaySecondaryActionPressed() {
-        if (currentOverlayActionMode == OverlayActionMode.ERROR) {
-            retryLatestPendingPayment()
-        } else {
-            openLatestTransactionDetails()
-        }
-    }
-
     private fun retryLatestPendingPayment() {
         val history = PaymentsHistoryActivity.getPaymentHistory(this)
         val latestPending: PaymentHistoryEntry? = history
@@ -2341,8 +2286,6 @@ class PaymentRequestActivity : AppCompatActivity() {
         // Payment overlay motion
         private const val NFC_MIN_LOADING_MS = 600L
         private const val OVERLAY_FADE_IN_MS = 150L
-        private const val HINT_FADE_OUT_MS = 120L
-        private const val HINT_FADE_IN_MS = 200L
         private const val LOADER_EXIT_MS = 150L
         private const val LOADER_EXIT_SCALE = 0.9f
         private const val AMOUNT_RECOLOR_MS = 260L

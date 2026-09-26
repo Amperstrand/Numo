@@ -304,8 +304,6 @@
     <string name="nfc_payment_error_nfc_comm">NFC 通信エラー: %1$s</string>
     <string name="nfc_payment_error_satocash">SATOCASH カード エラー: %1$s (SW: 0x%2$04X)</string>
     <string name="nfc_payment_error_unexpected">予期しないエラーが発生しました: %1$s</string>
-    <string name="nfc_payment_hint_keep_close">ここにスマートフォンをかざしてください</string>
-    <string name="nfc_payment_hint_processing">スマートフォンを離しても大丈夫です</string>
 
     
     <string name="common_ok">わかりました</string>

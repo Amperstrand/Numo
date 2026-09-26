@@ -304,8 +304,6 @@
     <string name="nfc_payment_error_nfc_comm">NFC 통신 오류: %1$s</string>
     <string name="nfc_payment_error_satocash">Satocash 카드 오류: %1$s(SW: 0x%2$04X)</string>
     <string name="nfc_payment_error_unexpected">예상치 못한 오류가 발생했습니다: %1$s</string>
-    <string name="nfc_payment_hint_keep_close">휴대전화를 여기에 대세요</string>
-    <string name="nfc_payment_hint_processing">휴대전화를 떼도 됩니다</string>
 
     
     <string name="common_ok">좋아요</string>
