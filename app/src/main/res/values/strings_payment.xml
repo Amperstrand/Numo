@@ -18,4 +18,6 @@
     <string name="payment_overlay_view_details">View details</string>
     <string name="payment_overlay_reading">Reading payment</string>
     <string name="payment_overlay_processing">Processing payment</string>
+    <string name="payment_overlay_pane_title">Payment</string>
+    <string name="payment_overlay_a11y_result">%1$s. %2$s</string>
 </resources>

@@ -37,4 +37,6 @@
     <string name="pos_toast_invalid_amount">Invalid payment amount</string>
     <string name="pos_toast_no_stock">No more stock available</string>
     <string name="pos_charge_button_loading">Starting wallet...</string>
+    <string name="keypad_delete_content_description">Delete</string>
+    <string name="keypad_clear_content_description">Clear</string>
 </resources>

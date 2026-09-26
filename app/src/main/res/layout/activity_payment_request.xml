@@ -291,6 +291,7 @@
         <!-- Unified Tab -->
         <LinearLayout
             android:id="@+id/unified_tab"
+            android:contentDescription="@string/payment_request_tab_unified"
             android:layout_width="wrap_content"
             android:layout_height="42dp"
             android:gravity="center"
@@ -300,6 +301,7 @@
 
             <TextView
                 android:id="@+id/unified_tab_icon"
+                android:importantForAccessibility="no"
                 android:layout_width="20dp"
                 android:layout_height="20dp"
                 android:text="U"
@@ -310,6 +312,7 @@
 
             <TextView
                 android:id="@+id/unified_tab_text"
+                android:importantForAccessibility="no"
                 android:layout_width="100dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="0dp"
@@ -323,6 +326,7 @@
         <!-- Cashu Tab -->
         <LinearLayout
             android:id="@+id/cashu_tab"
+            android:contentDescription="@string/payment_request_tab_cashu"
             android:layout_width="wrap_content"
             android:layout_height="42dp"
             android:gravity="center"
@@ -332,6 +336,7 @@
 
             <ImageView
                 android:id="@+id/cashu_tab_icon"
+                android:importantForAccessibility="no"
                 android:layout_width="20dp"
                 android:layout_height="20dp"
                 android:src="@drawable/cashu"
@@ -339,10 +344,11 @@
 
             <TextView
                 android:id="@+id/cashu_tab_text"
+                android:importantForAccessibility="no"
                 android:layout_width="100dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="0dp"
-                android:text="Cashu"
+                android:text="@string/payment_request_tab_cashu"
                 android:textSize="18sp"
                 android:textStyle="bold"
                 android:gravity="center"
@@ -353,6 +359,7 @@
         <!-- Lightning Tab -->
         <LinearLayout
             android:id="@+id/lightning_tab"
+            android:contentDescription="@string/payment_request_tab_lightning"
             android:layout_width="wrap_content"
             android:layout_height="42dp"
             android:gravity="center"
@@ -362,6 +369,7 @@
 
             <ImageView
                 android:id="@+id/lightning_tab_icon"
+                android:importantForAccessibility="no"
                 android:layout_width="20dp"
                 android:layout_height="20dp"
                 android:src="@drawable/ic_lightning_black"
@@ -369,10 +377,11 @@
 
             <TextView
                 android:id="@+id/lightning_tab_text"
+                android:importantForAccessibility="no"
                 android:layout_width="100dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="0dp"
-                android:text="Lightning"
+                android:text="@string/payment_request_tab_lightning"
                 android:textSize="18sp"
                 android:textStyle="bold"
                 android:gravity="center"
@@ -488,7 +497,6 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/space_s"
-                        android:accessibilityLiveRegion="polite"
                         android:gravity="center"
                         android:visibility="gone" />
 

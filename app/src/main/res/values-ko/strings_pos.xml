@@ -25,4 +25,6 @@
     <string name="pos_charge_button_min_limit">최소: %1$d sats</string>
     <string name="pos_charge_button_max_limit">최대: %1$d sats</string>
     <string name="pos_charge_button_mint_disabled">발행 비활성화됨</string>
+    <string name="keypad_delete_content_description">삭제</string>
+    <string name="keypad_clear_content_description">모두 지우기</string>
 </resources>

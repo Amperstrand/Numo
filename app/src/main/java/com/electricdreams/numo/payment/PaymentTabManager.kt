@@ -166,6 +166,11 @@ class PaymentTabManager(
         cashuQrContainer.visibility = View.INVISIBLE
         lightningQrContainer.visibility = View.INVISIBLE
 
+        // Lets TalkBack say which method is selected
+        unifiedTab.isSelected = tab == PaymentTab.UNIFIED
+        cashuTab.isSelected = tab == PaymentTab.CASHU
+        lightningTab.isSelected = tab == PaymentTab.LIGHTNING
+
         // Set selected
         when (tab) {
             PaymentTab.UNIFIED -> {

@@ -39,6 +39,11 @@ class KeypadManager(
         for (label in buttonLabels) {
             val button = inflater.inflate(R.layout.keypad_button_green_screen, keypad, false) as Button
             button.text = label
+            button.contentDescription = when (label) {
+                "<" -> context.getString(R.string.keypad_delete_content_description)
+                "C" -> context.getString(R.string.keypad_clear_content_description)
+                else -> null
+            }
             button.setOnClickListener { 
                 vibrateKeypad()
                 onKeyPressed(label)

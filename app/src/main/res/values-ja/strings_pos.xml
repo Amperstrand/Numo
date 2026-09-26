@@ -25,4 +25,6 @@
     <string name="pos_charge_button_min_limit">最小: %1$d sats</string>
     <string name="pos_charge_button_max_limit">最大: %1$d sats</string>
     <string name="pos_charge_button_mint_disabled">ミントが無効になっています</string>
+    <string name="keypad_delete_content_description">削除</string>
+    <string name="keypad_clear_content_description">クリア</string>
 </resources>

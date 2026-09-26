@@ -37,4 +37,6 @@
     <string name="pos_toast_invalid_amount">Ungültiger Zahlungsbetrag</string>
     <string name="pos_toast_no_stock">Kein weiterer Bestand verfügbar</string>
     <string name="pos_charge_button_loading">Wallet wird gestartet…</string>
+    <string name="keypad_delete_content_description">Zeichen löschen</string>
+    <string name="keypad_clear_content_description">Alles löschen</string>
 </resources>

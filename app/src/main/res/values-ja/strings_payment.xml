@@ -18,4 +18,6 @@
     <string name="payment_overlay_view_details">詳細を見る</string>
     <string name="payment_overlay_reading">支払いを読み取り中</string>
     <string name="payment_overlay_processing">支払いを処理中</string>
+    <string name="payment_overlay_pane_title">支払い</string>
+    <string name="payment_overlay_a11y_result">%1$s。%2$s</string>
 </resources>

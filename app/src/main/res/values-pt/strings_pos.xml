@@ -23,4 +23,6 @@
     <string name="pos_toast_invalid_amount">Valor de pagamento inválido</string>
     <string name="pos_toast_basket_empty">Sua cesta está vazia</string>
     <string name="pos_toast_no_stock">Não há mais estoque disponível</string>
+    <string name="keypad_delete_content_description">Apagar</string>
+    <string name="keypad_clear_content_description">Limpar</string>
 </resources>

@@ -30,7 +30,9 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.AccessibilityDelegateCompat
 import androidx.core.view.ViewCompat
+import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -1843,6 +1845,25 @@ class PaymentRequestActivity : AppCompatActivity() {
         }
 
         nfcAnimationView.setAnchor(nfcIndicatorSlot)
+        ViewCompat.setAccessibilityPaneTitle(
+            nfcAnimationContainer,
+            getString(R.string.payment_overlay_pane_title),
+        )
+        // The container is clickable only to block touches to the screen underneath; keep it
+        // out of TalkBack's focus order so the amount, result and actions are read one by one.
+        val touchBlockerOnly = object : AccessibilityDelegateCompat() {
+            override fun onInitializeAccessibilityNodeInfo(
+                host: View,
+                info: AccessibilityNodeInfoCompat,
+            ) {
+                super.onInitializeAccessibilityNodeInfo(host, info)
+                info.isClickable = false
+                info.isFocusable = false
+                info.removeAction(AccessibilityNodeInfoCompat.AccessibilityActionCompat.ACTION_CLICK)
+                info.removeAction(AccessibilityNodeInfoCompat.AccessibilityActionCompat.ACTION_FOCUS)
+            }
+        }
+        ViewCompat.setAccessibilityDelegate(nfcAnimationContainer, touchBlockerOnly)
 
         // When the error reason appears, glide the column into its new centre instead of
         // jumping; the reason itself fades in via animateResultTextIn.
@@ -1934,6 +1955,7 @@ class PaymentRequestActivity : AppCompatActivity() {
 
         nfcAnimationContainer.animate().cancel()
         nfcAnimationContainer.visibility = View.VISIBLE
+        setPaymentScreenHiddenFromAccessibility(true)
         if (ReducedMotion.isEnabled(this)) {
             nfcAnimationContainer.alpha = 1f
         } else {
@@ -1977,12 +1999,27 @@ class PaymentRequestActivity : AppCompatActivity() {
         cancelPendingResultReveal()
         nfcAnimationContainer.animate().cancel()
         nfcAnimationContainer.visibility = View.GONE
+        setPaymentScreenHiddenFromAccessibility(false)
         nfcAnimationView.reset()
         resetResultTextViews()
         resetResultActionButtons()
         restoreSystemBarsAfterAnimation()
         cancelNfcSafetyTimeout()
         isProcessingNfcPayment = false
+    }
+
+    /** Keeps TalkBack on the overlay while it covers the payment screen. */
+    private fun setPaymentScreenHiddenFromAccessibility(hidden: Boolean) {
+        val root = findViewById<ViewGroup>(R.id.payment_request_root) ?: return
+        val mode = if (hidden) {
+            View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
+        } else {
+            View.IMPORTANT_FOR_ACCESSIBILITY_AUTO
+        }
+        for (i in 0 until root.childCount) {
+            val child = root.getChildAt(i)
+            if (child !== nfcAnimationContainer) child.importantForAccessibility = mode
+        }
     }
 
     private fun startNfcSafetyTimeout() {
@@ -2220,6 +2257,9 @@ class PaymentRequestActivity : AppCompatActivity() {
             views += nfcResultReasonText
             if (showFailureReassurance) views += nfcResultReassuranceText
         }
+        // Set once the label is visible, so its live region speaks the whole result
+        animationResultLabelText.visibility = View.VISIBLE
+        animationResultLabelText.contentDescription = resultAnnouncement(success)
 
         val reducedMotion = ReducedMotion.isEnabled(this)
         val offset = dpToPx(8f).toFloat()
@@ -2241,6 +2281,19 @@ class PaymentRequestActivity : AppCompatActivity() {
                 .setInterpolator(DecelerateInterpolator())
                 .start()
         }
+    }
+
+    /** "Payment received. 1,000 sat" or the failure title with its reason, for TalkBack. */
+    private fun resultAnnouncement(success: Boolean): String {
+        val detail = if (success) {
+            animationResultAmountText.text.toString()
+        } else {
+            listOfNotNull(
+                nfcResultReasonText.text?.toString()?.takeIf { it.isNotBlank() },
+                getString(R.string.payment_failure_reassurance).takeIf { showFailureReassurance },
+            ).joinToString(" ")
+        }
+        return getString(R.string.payment_overlay_a11y_result, animationResultLabelText.text, detail)
     }
 
     private fun resetResultTextViews() {
@@ -2273,6 +2326,7 @@ class PaymentRequestActivity : AppCompatActivity() {
 
         animationResultLabelText.visibility = View.INVISIBLE
         animationResultLabelText.text = ""
+        animationResultLabelText.contentDescription = null
         nfcResultReasonText.visibility = View.GONE
         nfcResultReasonText.text = ""
         nfcResultReassuranceText.visibility = View.GONE

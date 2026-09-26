@@ -18,4 +18,6 @@
     <string name="payment_overlay_view_details">세부정보 보기</string>
     <string name="payment_overlay_reading">결제 정보를 읽는 중</string>
     <string name="payment_overlay_processing">결제 처리 중</string>
+    <string name="payment_overlay_pane_title">결제</string>
+    <string name="payment_overlay_a11y_result">%1$s. %2$s</string>
 </resources>
