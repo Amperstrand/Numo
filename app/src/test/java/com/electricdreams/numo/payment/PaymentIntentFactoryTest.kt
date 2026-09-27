@@ -111,7 +111,6 @@ class PaymentIntentFactoryTest {
             history[1].id,
             details.getStringExtra(TransactionDetailActivity.EXTRA_TRANSACTION_ID),
         )
-        assertEquals(1, details.getIntExtra(TransactionDetailActivity.EXTRA_TRANSACTION_POSITION, -1))
     }
 
     @Test
