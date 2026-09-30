@@ -307,6 +307,10 @@ class PaymentRequestActivity : AppCompatActivity() {
         animationErrorCloseButton = findViewById(R.id.animation_error_close_button)
 
         setupNfcAnimationOverlay()
+        // >>> LOCAL-PREVIEW
+        androidx.core.content.ContextCompat.registerReceiver(this, previewReceiver,
+            android.content.IntentFilter("numo.DEBUG_OVERLAY"), androidx.core.content.ContextCompat.RECEIVER_EXPORTED)
+        // <<< LOCAL-PREVIEW
 
         // Initialize tab manager
         tabManager = PaymentTabManager(
@@ -1714,7 +1718,32 @@ class PaymentRequestActivity : AppCompatActivity() {
         finish()
     }
 
+    // >>> LOCAL-PREVIEW
+    private val previewReceiver = object : android.content.BroadcastReceiver() {
+        override fun onReceive(c: android.content.Context, i: Intent) {
+            when (i.getStringExtra("state")) {
+                "loading" -> { hasTerminalOutcome = false; showNfcAnimationOverlay(); cancelNfcSafetyTimeout() }
+                "lift" -> showNfcAnimationProcessing()
+                "success" -> { cancelNfcSafetyTimeout(); hasTerminalOutcome = true
+                    if (nfcAnimationContainer.visibility != View.VISIBLE) openPaymentOverlay(false)
+                    showNfcAnimationSuccess(formattedAmountString) }
+                "error" -> { hasTerminalOutcome = false; handlePaymentError(i.getStringExtra("raw") ?: "Server unreachable") }
+                "reset" -> { hasTerminalOutcome = false; hideNfcAnimationOverlay() }
+                "redeeming" -> { isRedeemingToken = true; showNfcAnimationProcessing()
+                    nfcAnimationContainer.postDelayed({ isRedeemingToken = false }, 8000) }
+                "paid" -> { cancelNfcSafetyTimeout(); hasTerminalOutcome = true
+                    setResult(Activity.RESULT_OK, Intent().putExtra(RESULT_EXTRA_AMOUNT, paymentAmount))
+                    if (nfcAnimationContainer.visibility != View.VISIBLE) openPaymentOverlay(false)
+                    showNfcAnimationSuccess(formattedAmountString) }
+                "expire" -> pendingPaymentId?.let { PaymentsHistoryActivity.markPaymentExpired(this@PaymentRequestActivity, it) }
+            }
+        }
+    }
+    // <<< LOCAL-PREVIEW
     override fun onDestroy() {
+        // >>> LOCAL-PREVIEW
+        runCatching { unregisterReceiver(previewReceiver) }
+        // <<< LOCAL-PREVIEW
         nfcSetupRunnable?.let { nfcSetupHandler.removeCallbacks(it) }
         cancelNfcSafetyTimeout()
         cancelPendingResultReveal()
