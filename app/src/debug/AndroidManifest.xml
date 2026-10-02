@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- numo-burgermeister integration lane: the POS must reach the local
+         numo-bridge service over plain HTTP (adb reverse tcp:8787) during
+         demos. Debug builds only; release keeps the default secure policy. -->
+    <application android:usesCleartextTraffic="true" />
+</manifest>
