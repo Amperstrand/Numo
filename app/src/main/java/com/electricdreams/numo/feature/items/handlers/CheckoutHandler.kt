@@ -10,6 +10,9 @@ import com.electricdreams.numo.core.model.CheckoutBasket
 import com.electricdreams.numo.core.util.BasketManager
 import com.electricdreams.numo.core.util.CurrencyManager
 import com.electricdreams.numo.core.worker.BitcoinPriceWorker
+import com.electricdreams.numo.core.bridge.BridgeClient
+import com.electricdreams.numo.core.bridge.BridgePrefs
+import com.electricdreams.numo.feature.bridge.ProviderPaymentActivity
 import com.electricdreams.numo.feature.tips.TipSelectionActivity
 import com.electricdreams.numo.feature.tips.TipsManager
 
@@ -34,6 +37,14 @@ class CheckoutHandler(
     fun proceedToCheckout() {
         if (basketManager.getTotalItemCount() == 0) {
             Toast.makeText(activity, R.string.pos_toast_basket_empty, Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        // Provider (bridge) mode: the venue order is placed through the bridge —
+        // skip the self-generated mint quote entirely and show the bridge's 402 invoice.
+        val bridgePrefs = BridgePrefs.getInstance(activity)
+        if (bridgePrefs.enabled) {
+            placeProviderOrder()
             return
         }
 
@@ -92,6 +103,38 @@ class CheckoutHandler(
         }
 
         activity.finish()
+    }
+
+    /**
+     * Bridge provider flow: POST the basket (by SKU) to the bridge, then show
+     * the returned bolt11 as the payment QR. On failure the basket is kept.
+     */
+    private fun placeProviderOrder() {
+        val items = basketManager.getBasketItems().map { (it.item.sku ?: it.item.id ?: "") to it.quantity }
+            .filter { it.first.isNotEmpty() }
+        if (items.isEmpty()) {
+            Toast.makeText(activity, R.string.pos_toast_basket_empty, Toast.LENGTH_SHORT).show()
+            return
+        }
+        val prefs = BridgePrefs.getInstance(activity)
+        Thread {
+            val result = runCatching { BridgeClient.createOrder(prefs, items) }
+            android.os.Handler(android.os.Looper.getMainLooper()).post {
+                result.onSuccess { json ->
+                    basketManager.clearBasket()
+                    val intent = Intent(activity, ProviderPaymentActivity::class.java).apply {
+                        putExtra(ProviderPaymentActivity.EXTRA_BOLT11, json.optString("bolt11"))
+                        putExtra(ProviderPaymentActivity.EXTRA_AMOUNT_SATS, json.optLong("amountSats"))
+                        putExtra(ProviderPaymentActivity.EXTRA_ORDER_ID, json.optString("id"))
+                        putExtra(ProviderPaymentActivity.EXTRA_MODE, json.optString("mode"))
+                    }
+                    activity.startActivity(intent)
+                    activity.finish()
+                }.onFailure {
+                    Toast.makeText(activity, activity.getString(R.string.provider_failed, it.message), Toast.LENGTH_LONG).show()
+                }
+            }
+        }.start()
     }
 
     /**

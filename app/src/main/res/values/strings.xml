@@ -1093,4 +1093,31 @@
     <string name="item_entry_add_category">Add category</string>
     <string name="mints_other_mints">Other mints</string>
     <string name="mints_more_options">More options</string>
+    <!-- Bridge provider (Burgermeister terminal) -->
+    <string name="bridge_settings_title">Bro — Burgermeister-terminal</string>
+    <string name="bridge_use_as_provider">Bruk broen som leverandør</string>
+    <string name="bridge_base_url_label">Bro-adresse (emulator: http://10.0.2.2:8787)</string>
+    <string name="bridge_demo_mode">Demo-modus (av = LIVE)</string>
+    <string name="bridge_mode_hint">Bryteren speiler broens /mode — én kontroll styrer begge. LIVE tillater kun ekte bestillinger til Burgermeister Mehringdamm.</string>
+    <string name="bridge_mode_current">Modus: %1$s · kjørende steder: %2$s</string>
+    <string name="bridge_status_enabled">Leverandørmodus på — Charge går via broen</string>
+    <string name="bridge_status_disabled">Leverandørmodus av — vanlig Numo-flyt</string>
+    <string name="bridge_status_offline">Bro utilgjengelig — sjekk adressen og prøv igjen</string>
+    <string name="bridge_sync_catalog">Synkroniser meny fra broen nå</string>
+    <string name="bridge_syncing">Synkroniserer…</string>
+    <string name="bridge_sync_done">Synkronisert %1$d varer fra %2$s (modus %3$s)</string>
+    <string name="bridge_sync_failed">Synk feilet: %1$s</string>
+    <string name="provider_waiting">Vis QR — kunden betaler med lynlommeboken</string>
+    <string name="provider_waiting_demo">Demo: fakturaet loser seg automatisk om noen sekunder…</string>
+    <string name="provider_waiting_live">Venter på ekte betaling…</string>
+    <string name="provider_submitting">Betalt! Bestiller hos stedet…</string>
+    <string name="provider_paid">Betaling mottatt ✓</string>
+    <string name="provider_order_number">Ordrenummer: %1$s</string>
+    <string name="provider_open_checkout">Åpne Mollie-kassen (operatørens kort)</string>
+    <string name="provider_done">Fullfør</string>
+    <string name="provider_failed">Feil: %1$s</string>
+    <string name="provider_amount_sats">%,d sats</string>
+    <string name="provider_qr_desc">Betalings-QR (lynfaktura)</string>
+    <string name="bridge_settings_row_title">Bro (leverandør)</string>
+    <string name="bridge_settings_row_subtitle">Burgermeister-terminal: demo/live, menysynk</string>
 </resources>

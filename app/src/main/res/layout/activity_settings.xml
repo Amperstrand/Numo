@@ -152,6 +152,13 @@
                 <LinearLayout style="@style/Widget.Numo.SettingsGroup">
 
                     <com.electricdreams.numo.ui.components.SettingsRowView
+                        android:id="@+id/bridge_settings_item"
+                        style="@style/Widget.Numo.SettingsRow"
+                        app:rowIcon="@drawable/ic_link"
+                        app:rowTitle="@string/bridge_settings_row_title"
+                        app:rowSubtitle="@string/bridge_settings_row_subtitle" />
+
+                    <com.electricdreams.numo.ui.components.SettingsRowView
                         android:id="@+id/btcpay_settings_item"
                         style="@style/Widget.Numo.SettingsRow"
                         app:rowIcon="@drawable/ic_link"

@@ -183,6 +183,7 @@ class SettingsActivity : AppCompatActivity() {
             if (webhooksSettingsItem.isEnabled) openProtectedActivity(WebhookSettingsActivity::class.java)
         }
         btcpaySettingsItem.setOnClickListener { openProtectedActivity(BtcPaySettingsActivity::class.java) }
+findViewById<android.view.View>(R.id.bridge_settings_item).setOnClickListener { openActivity(BridgeSettingsActivity::class.java) }
         securitySettingsItem.setOnClickListener { openActivity(SecuritySettingsActivity::class.java) }
         languageSettingsItem.setOnClickListener { openActivity(LanguageSettingsActivity::class.java) }
         themeSettingsItem.setOnClickListener { openActivity(ThemeSettingsActivity::class.java) }

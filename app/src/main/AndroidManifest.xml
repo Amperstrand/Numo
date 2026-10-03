@@ -580,6 +580,18 @@
                 android:value=".feature.settings.SettingsActivity" />
         </activity>
 
+        <activity android:name="com.electricdreams.numo.feature.settings.BridgeSettingsActivity"
+            android:exported="false"
+            android:label="@string/bridge_settings_title"
+            android:theme="@style/Theme.Numo.Settings"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
+            android:parentActivityName=".feature.settings.SettingsActivity"
+            android:windowSoftInputMode="adjustResize" />
+        <activity android:name="com.electricdreams.numo.feature.bridge.ProviderPaymentActivity"
+            android:exported="false"
+            android:label="Betaling via bro"
+            android:theme="@style/Theme.Numo.Settings"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden" />
         <activity android:name="com.electricdreams.numo.feature.settings.BtcPaySettingsActivity"
             android:exported="false"
             android:label="@string/btcpay_settings_title"
