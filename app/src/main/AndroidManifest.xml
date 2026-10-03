@@ -589,7 +589,7 @@
             android:windowSoftInputMode="adjustResize" />
         <activity android:name="com.electricdreams.numo.feature.bridge.ProviderPaymentActivity"
             android:exported="false"
-            android:label="Betaling via bro"
+            android:label="@string/provider_payment_title"
             android:theme="@style/Theme.Numo.Settings"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden" />
         <activity android:name="com.electricdreams.numo.feature.settings.BtcPaySettingsActivity"

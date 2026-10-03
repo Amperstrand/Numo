@@ -1094,30 +1094,31 @@
     <string name="mints_other_mints">Other mints</string>
     <string name="mints_more_options">More options</string>
     <!-- Bridge provider (Burgermeister terminal) -->
-    <string name="bridge_settings_title">Bro — Burgermeister-terminal</string>
-    <string name="bridge_use_as_provider">Bruk broen som leverandør</string>
-    <string name="bridge_base_url_label">Bro-adresse (emulator: http://10.0.2.2:8787)</string>
-    <string name="bridge_demo_mode">Demo-modus (av = LIVE)</string>
-    <string name="bridge_mode_hint">Bryteren speiler broens /mode — én kontroll styrer begge. LIVE tillater kun ekte bestillinger til Burgermeister Mehringdamm.</string>
-    <string name="bridge_mode_current">Modus: %1$s · kjørende steder: %2$s</string>
-    <string name="bridge_status_enabled">Leverandørmodus på — Charge går via broen</string>
-    <string name="bridge_status_disabled">Leverandørmodus av — vanlig Numo-flyt</string>
-    <string name="bridge_status_offline">Bro utilgjengelig — sjekk adressen og prøv igjen</string>
-    <string name="bridge_sync_catalog">Synkroniser meny fra broen nå</string>
-    <string name="bridge_syncing">Synkroniserer…</string>
-    <string name="bridge_sync_done">Synkronisert %1$d varer fra %2$s (modus %3$s)</string>
-    <string name="bridge_sync_failed">Synk feilet: %1$s</string>
-    <string name="provider_waiting">Vis QR — kunden betaler med lynlommeboken</string>
-    <string name="provider_waiting_demo">Demo: fakturaet loser seg automatisk om noen sekunder…</string>
-    <string name="provider_waiting_live">Venter på ekte betaling…</string>
-    <string name="provider_submitting">Betalt! Bestiller hos stedet…</string>
-    <string name="provider_paid">Betaling mottatt ✓</string>
-    <string name="provider_order_number">Ordrenummer: %1$s</string>
-    <string name="provider_open_checkout">Åpne Mollie-kassen (operatørens kort)</string>
-    <string name="provider_done">Fullfør</string>
-    <string name="provider_failed">Feil: %1$s</string>
+    <string name="bridge_settings_title">Bridge — Burgermeister terminal</string>
+    <string name="bridge_use_as_provider">Use the bridge as provider</string>
+    <string name="bridge_base_url_label">Bridge address (emulator: http://10.0.2.2:8787)</string>
+    <string name="bridge_demo_mode">Demo mode (off = LIVE)</string>
+    <string name="bridge_mode_hint">The switch mirrors the bridge /mode — one control drives both sides. LIVE allows real orders to Burgermeister Mehringdamm only.</string>
+    <string name="bridge_mode_current">Mode: %1$s · live venues: %2$s</string>
+    <string name="bridge_status_enabled">Provider mode on — Charge goes through the bridge</string>
+    <string name="bridge_status_disabled">Provider mode off — normal Numo flow</string>
+    <string name="bridge_status_offline">Bridge unavailable — check the address and try again</string>
+    <string name="bridge_sync_catalog">Sync menu from bridge now</string>
+    <string name="bridge_syncing">Syncing…</string>
+    <string name="bridge_sync_done">Synced %1$d items from %2$s (mode %3$s)</string>
+    <string name="bridge_sync_failed">Sync failed: %1$s</string>
+    <string name="provider_waiting">Show the QR — the customer pays with their Lightning wallet</string>
+    <string name="provider_waiting_demo">Demo: the invoice settles automatically in a few seconds…</string>
+    <string name="provider_waiting_live">Waiting for real payment…</string>
+    <string name="provider_submitting">Paid! Placing the order with the venue…</string>
+    <string name="provider_paid">Payment received ✓</string>
+    <string name="provider_order_number">Order number: %1$s</string>
+    <string name="provider_open_checkout">Open Mollie checkout (operator\'s card)</string>
+    <string name="provider_done">Done</string>
+    <string name="provider_failed">Failed: %1$s</string>
     <string name="provider_amount_sats">%,d sats</string>
+    <string name="provider_payment_title">Bridge payment</string>
     <string name="provider_qr_desc">Betalings-QR (lynfaktura)</string>
-    <string name="bridge_settings_row_title">Bro (leverandør)</string>
-    <string name="bridge_settings_row_subtitle">Burgermeister-terminal: demo/live, menysynk</string>
+    <string name="bridge_settings_row_title">Bridge (provider)</string>
+    <string name="bridge_settings_row_subtitle">Burgermeister terminal: demo/live, menu sync</string>
 </resources>
