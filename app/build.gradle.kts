@@ -99,6 +99,9 @@ dependencies {
     implementation("androidx.gridlayout:gridlayout:1.0.0")
     implementation("androidx.viewpager2:viewpager2:1.0.0")
     implementation("androidx.navigation:navigation-fragment-ktx:2.7.6")
+
+    // Sunmi built-in printer (official SDK; no-op on non-Sunmi devices)
+    implementation("com.sunmi:printerlibrary:1.0.24")
     implementation("androidx.navigation:navigation-ui-ktx:2.7.6")
     
     // Testing
