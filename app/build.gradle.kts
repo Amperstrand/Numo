@@ -1,8 +1,25 @@
+import java.time.LocalDateTime
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.parcelize")
     id("jacoco")
 }
+
+// Debug freshness stamp: every debug build gets -dev.<shortsha>.<HHmm> so a
+// stale same-version APK on a device is detectable from Settings → About.
+fun gitShortSha(): String = runCatching {
+    ProcessBuilder("git", "rev-parse", "--short=8", "HEAD")
+        .directory(rootDir)
+        .redirectErrorStream(true)
+        .start()
+        .inputStream.bufferedReader().readText().trim()
+}.getOrNull()?.takeIf { it.isNotBlank() } ?: "nogit"
+
+fun buildTimeUtc(): String =
+    LocalDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ofPattern("HHmm"))
 
 android {
     namespace = "com.electricdreams.numo"
@@ -32,6 +49,7 @@ android {
         debug {
             enableUnitTestCoverage = true
             enableAndroidTestCoverage = true
+            versionNameSuffix = "-dev.${gitShortSha()}.${buildTimeUtc()}"
         }
     }
     
