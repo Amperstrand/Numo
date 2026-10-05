@@ -1,6 +1,7 @@
 package com.electricdreams.numo.feature.settings
 
 import android.os.Bundle
+import android.util.Base64
 import org.json.JSONArray
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -56,8 +57,24 @@ class BridgeSettingsActivity : AppCompatActivity() {
                     val venue = json.optJSONObject("venue")?.optString("name") ?: "?"
                     val manager = ItemManager.getInstance(this@BridgeSettingsActivity)
                     manager.clearItems()
+                    var imageCount = 0
                     for (i in 0 until items.length()) {
                         val o = items.optJSONObject(i) ?: continue
+                        val imageUrl = o.optString("imageUrl").ifEmpty { null }
+                        val imageDataUri = imageUrl?.let { url ->
+                            try {
+                                val conn = java.net.URL(url).openConnection() as java.net.HttpURLConnection
+                                conn.connectTimeout = 10_000
+                                conn.readTimeout = 10_000
+                                conn.connect()
+                                if (conn.responseCode == 200) {
+                                    val bytes = conn.inputStream.readBytes()
+                                    val mime = conn.contentType?.substringBefore(";")?.trim() ?: "image/png"
+                                    "data:$mime;base64,${Base64.encodeToString(bytes, Base64.NO_WRAP)}"
+                                } else null
+                            } catch (e: Exception) { null }
+                        }
+                        if (imageDataUri != null) imageCount++
                         manager.addItem(
                             Item(
                                 id = o.optString("id"),
@@ -70,6 +87,7 @@ class BridgeSettingsActivity : AppCompatActivity() {
                                 priceType = if (o.optString("priceType") == "SATS") PriceType.SATS else PriceType.FIAT,
                                 vatEnabled = o.optBoolean("vatEnabled", false),
                                 vatRate = o.optInt("vatRate", 0),
+                                imagePath = imageDataUri,
                             )
                         )
                     }
